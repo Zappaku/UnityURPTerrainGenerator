@@ -15,15 +15,19 @@ public class TerrainGenerator : MonoBehaviour
 
     public float waterLevel = 0.1f;
 
+    public int numberOfLakes = 3;
+    public int lakeRadius = 50;
+
     public TerrainLayer grasslandsTerrainLayer;
     public TerrainLayer desertTerrainLayer;
     public TerrainLayer mountainTerrainLayer;
+    public TerrainLayer lakeTerrainLayer;
+    public TerrainLayer canyonsTerrainLayer;
     public TerrainLayer waterTerrainLayer;
-    public TerrainLayer cliffTerrainLayer;
 
     private Terrain terrain;
 
-    public enum TerrainPreset { Grasslands, Desert, Mountainous }
+    public enum TerrainPreset { Grasslands, Desert, Mountainous, Lake, Canyons }
     public TerrainPreset terrainPreset = TerrainPreset.Grasslands;
     private TerrainPreset lastPreset = TerrainPreset.Grasslands;
 
@@ -49,27 +53,12 @@ public class TerrainGenerator : MonoBehaviour
         terrain = GenerateTerrain();
         terrain.terrainData = GenerateTerrainData();
 
-        PaintWaterAndCliffAreas();
+        PaintWaterBodies();
     }
 
-    private int GetBaseLayerIndex()
+    private Terrain GenerateTerrain()
     {
-        switch (terrainPreset)
-        {
-            case TerrainPreset.Grasslands:
-                return 0;
-            case TerrainPreset.Desert:
-                return 1;
-            case TerrainPreset.Mountainous:
-                return 2;
-            default:
-                return 0;
-        }
-    }
-
-        private Terrain GenerateTerrain()
-    {
-        TerrainData terrainData = new TerrainData
+        TerrainData terrainData = new()
         {
             heightmapResolution = width + 1,
             size = new Vector3(width, depth, height)
@@ -82,26 +71,30 @@ public class TerrainGenerator : MonoBehaviour
 
     private TerrainData GenerateTerrainData()
     {
-        TerrainData terrainData = new TerrainData
+        TerrainData terrainData = new()
         {
             heightmapResolution = width + 1,
             size = new Vector3(width, depth, height)
         };
         terrainData.SetHeights(0, 0, GenerateHeights());
 
-        if (terrainPreset == TerrainPreset.Grasslands && desertTerrainLayer != null)
+        switch (terrainPreset)
         {
-            terrainData.terrainLayers = new TerrainLayer[1] { grasslandsTerrainLayer };
-        }
-
-        if (terrainPreset == TerrainPreset.Desert && desertTerrainLayer != null)
-        {
-            terrainData.terrainLayers = new TerrainLayer[1] { desertTerrainLayer };
-        }
-
-        if (terrainPreset == TerrainPreset.Mountainous && mountainTerrainLayer != null)
-        {
-            terrainData.terrainLayers = new TerrainLayer[1] { mountainTerrainLayer };
+            case TerrainPreset.Grasslands:
+                terrainData.terrainLayers = new TerrainLayer[1] { grasslandsTerrainLayer };
+                break;
+            case TerrainPreset.Desert:
+                terrainData.terrainLayers = new TerrainLayer[1] { desertTerrainLayer };
+                break;
+            case TerrainPreset.Mountainous:
+                terrainData.terrainLayers = new TerrainLayer[1] { mountainTerrainLayer };
+                break;
+            case TerrainPreset.Lake:
+                terrainData.terrainLayers = new TerrainLayer[1] { lakeTerrainLayer };
+                break;
+            case TerrainPreset.Canyons:
+                terrainData.terrainLayers = new TerrainLayer[1] { canyonsTerrainLayer };
+                break;
         }
 
         return terrainData;
@@ -163,15 +156,15 @@ public class TerrainGenerator : MonoBehaviour
         {
             for (int z = 0; z < height; z++)
             {
-                float xCoord = ((float)x / width * scale * 0.3f) + seed;
-                float zCoord = ((float)z / height * scale * 0.3f) + seed;
+                float xCoord = ((float)x / width) * scale + seed;
+                float zCoord = ((float)z / height) * scale + seed;
 
                 float baseHeight = Mathf.PerlinNoise(xCoord, zCoord);
 
-                float detailScale = 50f;
-                float detailHeight = Mathf.PerlinNoise(xCoord * detailScale, zCoord * detailScale) * 0.1f;
+                float detailScale = scale * 0.5f;
+                float detailHeight = Mathf.PerlinNoise(xCoord * detailScale + seed, zCoord * detailScale + seed) * 0.1f;
 
-                heights[x, z] = Mathf.Lerp(baseHeight, detailHeight, 0.1f);
+                heights[x, z] = Mathf.Lerp(baseHeight, detailHeight + baseHeight * 0.1f, 0.5f);
             }
         }
 
@@ -180,44 +173,106 @@ public class TerrainGenerator : MonoBehaviour
         return heights;
     }
 
-    private float[,] CarveWaterBodies(float[,] heights)
+    private float[,] GenerateHeightsForLake()
     {
-        float waterThreshold = 0.1f;
-        float waterDepth = 0.05f;
+        float[,] heights = GenerateHeightsForGrasslands();
+
+        List<Vector2Int> lakeCenters = new();
+        for (int i = 0; i < numberOfLakes; i++)
+        {
+            int centerX = Random.Range(lakeRadius, width - lakeRadius);
+            int centerY = Random.Range(lakeRadius, height - lakeRadius);
+            lakeCenters.Add(new Vector2Int(centerX, centerY));
+        }
 
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < height; z++)
             {
-                if (heights[x, z] < waterThreshold)
+                foreach (Vector2Int center in lakeCenters)
                 {
-                    heights[x, z] *= waterDepth;
+                    float distance = Vector2.Distance(new Vector2(x, z), new Vector2(center.x, center.y));
+                    if (distance < lakeRadius)
+                    {
+                        float factor = (lakeRadius - distance) / lakeRadius;
+                        heights[x, z] *= (1 - factor * 0.8f);
+                    }
                 }
             }
         }
 
+        heights = SmoothTerrain(heights);
+        return heights;
+    }
+
+    private float[,] GenerateHeightsForCanyons()
+    {
+        float[,] heights = new float[width, height];
+        float baseHeight = 0.4f;
+
+        for (int x = 0; x < width; x++)
+        {
+            for (int z = 0; z < height; z++)
+            {
+                float xCoord = (float)x / width * scale * 2;
+                float zCoord = (float)z / height * scale * 2;
+
+                float terrainNoise = Mathf.PerlinNoise(xCoord * 0.05f, zCoord * 0.05f) * 0.5f;
+                float canyonNoise = Mathf.PerlinNoise(xCoord, zCoord);
+
+                if (canyonNoise < 0.4f)
+                {
+                    float canyonDepth = (0.4f - canyonNoise) * depth;
+                    heights[x, z] = Mathf.Max(0, baseHeight + terrainNoise - canyonDepth);
+                }
+                else
+                {
+                    heights[x, z] = baseHeight + terrainNoise;
+                }
+            }
+        }
+
+        heights = SmoothTerrain(heights);
         return heights;
     }
 
     private float[,] GenerateHeights()
     {
-        switch (terrainPreset)
+        return terrainPreset switch
         {
-            case TerrainPreset.Grasslands:
-                return GenerateHeightsForGrasslands();
-            case TerrainPreset.Desert:
-                return GenerateHeightsForDesert();
-            case TerrainPreset.Mountainous:
-                return GenerateHeightsForMountainous();
-            default:
-                return new float[width, height];
+            TerrainPreset.Grasslands => GenerateHeightsForGrasslands(),
+            TerrainPreset.Desert => GenerateHeightsForDesert(),
+            TerrainPreset.Mountainous => GenerateHeightsForMountainous(),
+            TerrainPreset.Lake => GenerateHeightsForLake(),
+            TerrainPreset.Canyons => GenerateHeightsForCanyons(),
+            _ => new float[width, height],
+        };
+    }
+
+    private float[,] CarveWaterBodies(float[,] heights)
+    {
+        if (terrainPreset != TerrainPreset.Lake && terrainPreset != TerrainPreset.Canyons)
+        {
+            float waterThreshold = 0.1f;
+            float waterDepth = 0.05f;
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int z = 0; z < height; z++)
+                {
+                    if (heights[x, z] < waterThreshold)
+                    {
+                        heights[x, z] *= waterDepth;
+                    }
+                }
+            }
         }
+        return heights;
     }
 
     private float[,] SmoothTerrain(float[,] heights)
     {
-        float steepnessThreshold = 0.5f;
-
+        float smoothnessThreshold = 1f;
         float[,] smoothedHeights = (float[,])heights.Clone();
 
         for (int x = 1; x < width - 1; x++)
@@ -226,7 +281,7 @@ public class TerrainGenerator : MonoBehaviour
             {
                 float steepness = Mathf.Abs(heights[x, z] - heights[x + 1, z]) + Mathf.Abs(heights[x, z] - heights[x, z + 1]);
 
-                if (steepness < steepnessThreshold)
+                if (steepness < smoothnessThreshold)
                 {
                     float totalHeight = 0f;
                     for (int nx = -1; nx <= 1; nx++)
@@ -244,12 +299,20 @@ public class TerrainGenerator : MonoBehaviour
         return smoothedHeights;
     }
 
-    private void PaintWaterAndCliffAreas()
+    private void PaintWaterBodies()
     {
         TerrainData terrainData = terrain.terrainData;
         var heights = terrainData.GetHeights(0, 0, terrainData.heightmapResolution, terrainData.heightmapResolution);
 
-        TerrainLayer[] newLayers = { grasslandsTerrainLayer, waterTerrainLayer, cliffTerrainLayer };
+        TerrainLayer[] newLayers = terrainPreset switch
+        {
+            TerrainPreset.Grasslands => new TerrainLayer[] { grasslandsTerrainLayer, waterTerrainLayer},
+            TerrainPreset.Desert => new TerrainLayer[] { desertTerrainLayer, waterTerrainLayer},
+            TerrainPreset.Mountainous => new TerrainLayer[] { mountainTerrainLayer, waterTerrainLayer},
+            TerrainPreset.Lake => new TerrainLayer[] { lakeTerrainLayer, waterTerrainLayer },
+            TerrainPreset.Canyons => new TerrainLayer[] { canyonsTerrainLayer, waterTerrainLayer },
+            _ => new TerrainLayer[] { grasslandsTerrainLayer, waterTerrainLayer}
+        };
         terrainData.terrainLayers = newLayers;
 
         float[,,] alphaMap = new float[terrainData.alphamapWidth, terrainData.alphamapHeight, newLayers.Length];
@@ -258,10 +321,8 @@ public class TerrainGenerator : MonoBehaviour
         {
             for (int x = 0; x < terrainData.alphamapWidth; x++)
             {
-                float normalizedX = (float)x / terrainData.alphamapWidth;
-                float normalizedY = (float)y / terrainData.alphamapHeight;
-
-                float steepness = terrainData.GetSteepness(normalizedX, normalizedY) * Mathf.Deg2Rad;
+                _ = (float)x / terrainData.alphamapWidth;
+                _ = (float)y / terrainData.alphamapHeight;
                 float heightValue = heights[x * terrainData.heightmapResolution / terrainData.alphamapWidth, y * terrainData.heightmapResolution / terrainData.alphamapHeight];
 
                 for (int layer = 0; layer < newLayers.Length; layer++)
@@ -269,20 +330,10 @@ public class TerrainGenerator : MonoBehaviour
                     alphaMap[x, y, layer] = 0f;
                 }
 
-                int baseLayerIndex = GetBaseLayerIndex();
-
                 bool isAboveWater = heightValue > waterLevel;
                 if (isAboveWater)
                 {
-                    float angle = Mathf.Rad2Deg * Mathf.Asin(steepness);
-                    if (angle >= 35 && angle <= 90)
-                    {
-                        alphaMap[x, y, 2] = 1;
-                    }
-                    else
-                    {
-                        alphaMap[x, y, baseLayerIndex] = 1;
-                    }
+                    alphaMap[x, y, 0] = 1;
                 }
                 else
                 {
@@ -305,7 +356,13 @@ public class TerrainGenerator : MonoBehaviour
                 scale = 150; depth = 25; waterLevel = 0.00f;
                 break;
             case TerrainPreset.Mountainous:
-                scale = 25; depth = 50; waterLevel = 0.3f;
+                scale = 15; depth = 50; waterLevel = 0.2f;
+                break;
+            case TerrainPreset.Lake:
+                scale = 15; depth = 20; waterLevel = 0.2f; numberOfLakes = 1; lakeRadius = 200;
+                break;
+            case TerrainPreset.Canyons:
+                scale = 5; depth = 20; waterLevel = 0.00f;
                 break;
         }
     }

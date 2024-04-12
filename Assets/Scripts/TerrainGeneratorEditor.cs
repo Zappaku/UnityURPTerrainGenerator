@@ -29,12 +29,18 @@ public class TerrainGeneratorEditor : Editor
                 terrainGenerator.mountainTerrainLayer = (TerrainLayer)EditorGUILayout.ObjectField("Mountainous Terrain Layer",
                     terrainGenerator.mountainTerrainLayer, typeof(TerrainLayer), false);
                 break;
+            case TerrainGenerator.TerrainPreset.Lake:
+                terrainGenerator.lakeTerrainLayer = (TerrainLayer)EditorGUILayout.ObjectField("Lake Terrain Layer",
+                    terrainGenerator.lakeTerrainLayer, typeof(TerrainLayer), false);
+                break;
+            case TerrainGenerator.TerrainPreset.Canyons:
+                terrainGenerator.canyonsTerrainLayer = (TerrainLayer)EditorGUILayout.ObjectField("Canyons Terrain Layer",
+                    terrainGenerator.canyonsTerrainLayer, typeof(TerrainLayer), false);
+                break;
         }
 
         terrainGenerator.waterTerrainLayer = (TerrainLayer)EditorGUILayout.ObjectField("Water Layer",
             terrainGenerator.waterTerrainLayer, typeof(TerrainLayer), false);
-        terrainGenerator.cliffTerrainLayer = (TerrainLayer)EditorGUILayout.ObjectField("Cliff Layer",
-            terrainGenerator.cliffTerrainLayer, typeof(TerrainLayer), false);
 
         bool presetChanged = false;
         if (EditorGUI.EndChangeCheck())
@@ -58,7 +64,13 @@ public class TerrainGeneratorEditor : Editor
 
         GUILayout.Space(10);
         GUILayout.Label("Water Bodies", EditorStyles.boldLabel);
-        terrainGenerator.waterLevel = EditorGUILayout.Slider("Water Level Height", terrainGenerator.waterLevel, 0f, 1f);
+        terrainGenerator.waterLevel = EditorGUILayout.Slider("Water Level Height", terrainGenerator.waterLevel, 0f, 0.5f);
+
+        if (terrainGenerator.terrainPreset == TerrainGenerator.TerrainPreset.Lake)
+        {
+            terrainGenerator.numberOfLakes = EditorGUILayout.IntField("Number of Lakes", terrainGenerator.numberOfLakes);
+            terrainGenerator.lakeRadius = EditorGUILayout.IntField("Lake Radius", terrainGenerator.lakeRadius);
+        }
 
         GUILayout.Space(10);
         GUILayout.Label("Seed", EditorStyles.boldLabel);
