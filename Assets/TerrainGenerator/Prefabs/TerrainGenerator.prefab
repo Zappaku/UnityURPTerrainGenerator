@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3058312108999784583
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8707397091944778951}
+  - component: {fileID: 6271060813802021874}
+  m_Layer: 0
+  m_Name: TerrainGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8707397091944778951
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3058312108999784583}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6271060813802021874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3058312108999784583}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b36d8fdeb778b1e47b376d2a77d13a87, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  width: 512
+  height: 512
+  depth: 10
+  scale: 15
+  useRandomSeed: 1
+  seed: 75888
+  waterLevel: 0.1
+  numberOfLakes: 1
+  lakeRadius: 200
+  grasslandsTerrainLayer: {fileID: 8574412962073106934, guid: 172cfaea03a55e54fb3c6d239e1eb8f7,
+    type: 2}
+  desertTerrainLayer: {fileID: 8574412962073106934, guid: 5e6f1daa7d169a447aec32cc33af9185,
+    type: 2}
+  mountainTerrainLayer: {fileID: 8574412962073106934, guid: 172cfaea03a55e54fb3c6d239e1eb8f7,
+    type: 2}
+  lakeTerrainLayer: {fileID: 8574412962073106934, guid: 172cfaea03a55e54fb3c6d239e1eb8f7,
+    type: 2}
+  waterTerrainLayer: {fileID: 8574412962073106934, guid: 5e6f1daa7d169a447aec32cc33af9185,
+    type: 2}
+  waterMaterial: {fileID: 2100000, guid: 14b9b43cf4c21d14eac342aafa386b3d, type: 2}
+  terrainPreset: 0
