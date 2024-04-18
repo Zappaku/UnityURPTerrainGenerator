@@ -44,14 +44,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b36d8fdeb778b1e47b376d2a77d13a87, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 512
-  height: 512
-  depth: 10
+  width: 1024
+  height: 1024
+  depth: 20
   scale: 15
   useRandomSeed: 1
-  seed: 75888
-  waterLevel: 0.1
-  numberOfLakes: 1
+  seed: 30284
+  waterLevel: 0.2
+  numberOfLakes: 5
   lakeRadius: 200
   grasslandsTerrainLayer: {fileID: 8574412962073106934, guid: 172cfaea03a55e54fb3c6d239e1eb8f7,
     type: 2}
@@ -64,4 +64,4 @@ MonoBehaviour:
   waterTerrainLayer: {fileID: 8574412962073106934, guid: 5e6f1daa7d169a447aec32cc33af9185,
     type: 2}
   waterMaterial: {fileID: 2100000, guid: 14b9b43cf4c21d14eac342aafa386b3d, type: 2}
-  terrainPreset: 0
+  terrainPreset: 3
